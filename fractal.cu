@@ -8,6 +8,7 @@
 //#include "Quaternion.h"
 #include "Constants.h"
 
+
 static void CheckCudaErrorAux (const char *, unsigned, const char *, cudaError_t);
 #define CUDA_CHECK_RETURN(value) CheckCudaErrorAux(__FILE__,__LINE__, #value, value)
 
@@ -218,6 +219,8 @@ void start_Calculation()
 		}
 	}
 
+	FILE* dotfile;
+	
 	int pos=0;
 	while(pos<DIMENSION)
 	{
@@ -253,6 +256,12 @@ void start_Calculation()
 			}
 			//printf("cudaMemcpy");
 			cudaMemcpy(host_arrays[i], device_arrays[i], size, cudaMemcpyDeviceToHost);
+			dotfile = fopen("dots"+pos, "w+");
+			for(int j=0; j<DIMENSION; j++)
+			{
+				fprintf(dotfile, "%d %d %d : %d\n", getXIndexFromArrayIndex(j), getYIndexFromArrayIndex(j), getZIndexFromArrayIndex(j), host_arrays[i][j]);
+			}
+			fclose(dotfile);
 		}
 	}
 
