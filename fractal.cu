@@ -7,7 +7,7 @@
 #include <math.h>
 //#include "Quaternion.h"
 #include "Constants.h"
-
+#include <sstream>
 
 static void CheckCudaErrorAux (const char *, unsigned, const char *, cudaError_t);
 #define CUDA_CHECK_RETURN(value) CheckCudaErrorAux(__FILE__,__LINE__, #value, value)
@@ -77,7 +77,11 @@ class Quaternion
 
 		__device__  float abs(void)
 			{
-				return sqrt(pow(real,2)+pow(i,2)+pow(j,2)+pow(k,2));
+				float tmp = real*real;
+				tmp += i*i;
+				tmp += j*j;
+				tmp += k*k;
+				return sqrtf(tmp);
 			};
 		__device__ ~Quaternion()
 			{
@@ -117,12 +121,12 @@ __host__ __device__ int getXIndexFromArrayIndex(int Index)
 
 __host__ __device__ int getYIndexFromArrayIndex(int Index)
 {
-	return (int)(Index-DIMENSION)/DIMENSION;
+	return (int) (Index%(DIMENSION*DIMENSION))/DIMENSION;
 }
 
 __host__ __device__ int getZIndexFromArrayIndex(int Index)
 {
-	return (int)(Index-DIMENSION-DIMENSION)/DIMENSION;
+	return (int) Index%DIMENSION;
 }
 
 
@@ -141,24 +145,35 @@ __global__ void calc_JuliaSet_quat_3D_Part(unsigned char* A, float k_Index, floa
 	unsigned long tid = threadIdx.x + blockIdx.x*blockDim.x;
 	unsigned long d = DIMENSION;
 	unsigned long DIM = d*d*d;
-	if(tid+(blockDim.x*gridDim.x)<DIM)
-	{
-		unsigned int number_of_works=DIM/(blockDim.x*gridDim.x);
+	unsigned long number_of_works=DIM/(blockDim.x*gridDim.x);
+	//if(tid+(blockDim.x*gridDim.x)<DIM)
+	//{
 
-		for(int i=0; i<=number_of_works; i++)
+	for(int i=0; i<=number_of_works; i++)
+	{
+		if(i==number_of_works && tid>(DIM%(blockDim.x*gridDim.x)))
 		{
-			Quaternion Z = Quaternion(getXIndexFromArrayIndex(tid+(i*blockDim.x*gridDim.x)),getXIndexFromArrayIndex(tid+(i*blockDim.x*gridDim.x)), getXIndexFromArrayIndex(tid+(i*blockDim.x*gridDim.x)), k_Index);
+		
+		}
+		else
+		{
+			Quaternion Z = Quaternion(getCoordinateValue(getXIndexFromArrayIndex(tid+(i*blockDim.x*gridDim.x))),getCoordinateValue(getYIndexFromArrayIndex(tid+(i*blockDim.x*gridDim.x))), getCoordinateValue(getZIndexFromArrayIndex(tid+(i*blockDim.x*gridDim.x))), k_Index);
 			Quaternion C = Quaternion(C_real, C_i, C_j, C_k);
-			//function to calculate MandelbrotSet  z(1) = z(0)² + c
+			//function to calculate JuliaSet  z(1) = z(0)² + c
 			int k=0;
 			while(k<MAX_ITERATIONS && Z.abs()<2)
 			{
 				Z=Z*Z+C;
 				k++;
 			}
-			A[tid+(i*blockDim.x*gridDim.x)]=k/(MAX_ITERATIONS/256);
+			//int f = (MAX_ITERATIONS/256.0)+0.5;
+			A[tid+(i*blockDim.x*gridDim.x)]=k;//(MAX_ITERATIONS/256);
+			//A[tid+(i*blockDim.x*gridDim.x)]='a';
 		}
 	}
+	//}
+
+//	A[tid]='a';
 }
 
 /**/
@@ -174,10 +189,11 @@ void start_Calculation()
 {
 	//Quaternion C = Quaternion(0.1, 0.1, 0.1, 0.1);
 	int devices = 0;
-	unsigned char* host_arrays[MAX_DEVICES_POSSIBLE];
+	unsigned char* host_array;
 	unsigned char* device_arrays[MAX_DEVICES_POSSIBLE];
 	size_t size = DIMENSION * DIMENSION * DIMENSION * sizeof(unsigned char);
 	cudaError_t error;
+	host_array = (unsigned char*) malloc(size);
 	//float k_index = 0;
 
 	/*Cuda Pre-Condition-Checking*/
@@ -200,7 +216,7 @@ void start_Calculation()
 	//create Array for each Device
 	for(int i=0; i<devices; i++)
 	{
-		host_arrays[i] = (unsigned char *)malloc(size);
+		//host_arrays[i] = (unsigned char *)malloc(size);
 
 		//set context to specific device
 		error = cudaSetDevice(i);
@@ -235,8 +251,15 @@ void start_Calculation()
 			    exit(EXIT_FAILURE);
 			}
 			//printf("%f\n", getCoordinateValue(pos));
-			calc_JuliaSet_quat_3D_Part<<<MAX_BLOCKS_PER_GRID, MAX_THREADS_PER_BLOCK>>>(device_arrays[i], getCoordinateValue(pos), 0.1, 0.1, 0.1, 0.1);
+			calc_JuliaSet_quat_3D_Part<<<MAX_BLOCKS_PER_GRID, MAX_THREADS_PER_BLOCK>>>(device_arrays[i], getCoordinateValue(pos), -0.2, 0.6, 0.2, 0.2);
 			pos++;
+			error = cudaGetLastError();
+
+    			if (error != cudaSuccess)
+    			{
+        			fprintf(stderr, "Failed to launch vectorAdd kernel (error code %s)!\n", cudaGetErrorString(error));
+        			exit(EXIT_FAILURE);
+    			}
 		}
 		/*
 		if(pos%20==0)
@@ -255,11 +278,17 @@ void start_Calculation()
 			    exit(EXIT_FAILURE);
 			}
 			//printf("cudaMemcpy");
-			cudaMemcpy(host_arrays[i], device_arrays[i], size, cudaMemcpyDeviceToHost);
-			dotfile = fopen("dots"+pos, "w+");
-			for(int j=0; j<DIMENSION; j++)
+			cudaMemcpy(host_array, device_arrays[i], size, cudaMemcpyDeviceToHost);
+			std::ostringstream file;
+			file << "dots" << (pos-(devices-i)) << ".dat";
+			dotfile = fopen(file.str().c_str(), "w+");
+			for(int j=0; j<DIMENSION*DIMENSION*DIMENSION; j++)
 			{
-				fprintf(dotfile, "%d %d %d : %d\n", getXIndexFromArrayIndex(j), getYIndexFromArrayIndex(j), getZIndexFromArrayIndex(j), host_arrays[i][j]);
+				
+				if(host_array[j] >= (unsigned char)255)
+				{
+					fprintf(dotfile, "%f %f %f\n", getCoordinateValue(getXIndexFromArrayIndex(j)), getCoordinateValue(getYIndexFromArrayIndex(j)), getCoordinateValue(getZIndexFromArrayIndex(j)));//, host_array[j]);
+				}
 			}
 			fclose(dotfile);
 		}
@@ -276,9 +305,9 @@ void start_Calculation()
 		    exit(EXIT_FAILURE);
 		}
 		cudaFree(device_arrays[i]);
-		free(host_arrays[i]);
+		//free(host_arrays[i]);
 	}
-
+	free(host_array);
 
 }
 
