@@ -111,7 +111,7 @@ class Quaternion
 
 __host__ __device__ float getCoordinateValue(int Index)
 {
-	return ((float)(Index*4)/(float)(DIMENSION-1))-2;
+	return ((float)(Index*2)/(float)(DIMENSION-1))-1;
 }
 
 __host__ __device__ int getXIndexFromArrayIndex(int Index)
