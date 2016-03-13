@@ -1,11 +1,9 @@
-
 #include <iostream>
 #include <numeric>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
-//#include "Quaternion.h"
 #include "Constants.h"
 #include <sstream>
 
@@ -109,21 +107,27 @@ class Quaternion
 /**/
 /**/
 
+/*conversion from 1D representation of a 3D array into a 3D array*/
+
+//get the exact float value for a given 3D index value
 __host__ __device__ float getCoordinateValue(int Index)
 {
 	return ((float)(Index*2)/(float)(DIMENSION-1))-1;
 }
 
+//get X Coordinate of 3D array at given 1D array index value
 __host__ __device__ int getXIndexFromArrayIndex(int Index)
 {
 	return (int)Index/(DIMENSION*DIMENSION);
 }
 
+//get Y Coordinate of 3D array at given 1D array index value
 __host__ __device__ int getYIndexFromArrayIndex(int Index)
 {
 	return (int) (Index%(DIMENSION*DIMENSION))/DIMENSION;
 }
 
+//get Z Coordinate of 3D array at given 1D array index value
 __host__ __device__ int getZIndexFromArrayIndex(int Index)
 {
 	return (int) Index%DIMENSION;
@@ -140,14 +144,14 @@ __host__ __device__ int getZIndexFromArrayIndex(int Index)
 /**/
 /**/
 
+
+//kernel to calculate the k_Index-th 3D part of Julia Set in quaternion space at given C
 __global__ void calc_JuliaSet_quat_3D_Part(unsigned char* A, float k_Index, float C_real, float C_i, float C_j, float C_k)
 {
 	unsigned long tid = threadIdx.x + blockIdx.x*blockDim.x;
 	unsigned long d = DIMENSION;
 	unsigned long DIM = d*d*d;
 	unsigned long number_of_works=DIM/(blockDim.x*gridDim.x);
-	//if(tid+(blockDim.x*gridDim.x)<DIM)
-	//{
 
 	for(int i=0; i<=number_of_works; i++)
 	{
@@ -159,7 +163,7 @@ __global__ void calc_JuliaSet_quat_3D_Part(unsigned char* A, float k_Index, floa
 		{
 			Quaternion Z = Quaternion(getCoordinateValue(getXIndexFromArrayIndex(tid+(i*blockDim.x*gridDim.x))),getCoordinateValue(getYIndexFromArrayIndex(tid+(i*blockDim.x*gridDim.x))), getCoordinateValue(getZIndexFromArrayIndex(tid+(i*blockDim.x*gridDim.x))), k_Index);
 			Quaternion C = Quaternion(C_real, C_i, C_j, C_k);
-			//function to calculate JuliaSet  z(1) = z(0)² + c
+			//function to calculate JuliaSet  z(n+1) = z(n)² + c
 			int k=0;
 			while(k<MAX_ITERATIONS && Z.abs()<2)
 			{
@@ -171,9 +175,6 @@ __global__ void calc_JuliaSet_quat_3D_Part(unsigned char* A, float k_Index, floa
 			//A[tid+(i*blockDim.x*gridDim.x)]='a';
 		}
 	}
-	//}
-
-//	A[tid]='a';
 }
 
 /**/
@@ -185,9 +186,8 @@ __global__ void calc_JuliaSet_quat_3D_Part(unsigned char* A, float k_Index, floa
 
 
 
-void start_Calculation()
+void start_Calculation(float creal, float ci, float cj, float ck, int maxBlocksPerGrid, int maxThreadsPerBlock)
 {
-	//Quaternion C = Quaternion(0.1, 0.1, 0.1, 0.1);
 	int devices = 0;
 	unsigned char* host_array;
 	unsigned char* device_arrays[MAX_DEVICES_POSSIBLE];
@@ -216,7 +216,6 @@ void start_Calculation()
 	//create Array for each Device
 	for(int i=0; i<devices; i++)
 	{
-		//host_arrays[i] = (unsigned char *)malloc(size);
 
 		//set context to specific device
 		error = cudaSetDevice(i);
@@ -250,8 +249,8 @@ void start_Calculation()
 			    printf("cudaSetDeviceCount returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
 			    exit(EXIT_FAILURE);
 			}
-			//printf("%f\n", getCoordinateValue(pos));
-			calc_JuliaSet_quat_3D_Part<<<MAX_BLOCKS_PER_GRID, MAX_THREADS_PER_BLOCK>>>(device_arrays[i], getCoordinateValue(pos), -0.2, 0.6, 0.2, 0.2);
+
+			calc_JuliaSet_quat_3D_Part<<<maxBlocksPerGrid, maxThreadsPerBlock>>>(device_arrays[i], getCoordinateValue(pos), creal, ci, cj, ck);
 			pos++;
 			error = cudaGetLastError();
 
@@ -261,12 +260,7 @@ void start_Calculation()
         			exit(EXIT_FAILURE);
     			}
 		}
-		/*
-		if(pos%20==0)
-		{
-			printf("started %d Kernels\n position is now %d\n", devices, pos);
-		}
-		*/
+
 		//reading back results
 		for(int i=0; i<devices; i++)
 		{
@@ -277,8 +271,10 @@ void start_Calculation()
 			    printf("cudaSetDeviceCount returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
 			    exit(EXIT_FAILURE);
 			}
-			//printf("cudaMemcpy");
+
 			cudaMemcpy(host_array, device_arrays[i], size, cudaMemcpyDeviceToHost);
+
+			//print results into .dat file
 			std::ostringstream file;
 			file << "dots" << (pos-(devices-i)) << ".dat";
 			dotfile = fopen(file.str().c_str(), "w+");
@@ -305,7 +301,6 @@ void start_Calculation()
 		    exit(EXIT_FAILURE);
 		}
 		cudaFree(device_arrays[i]);
-		//free(host_arrays[i]);
 	}
 	free(host_array);
 
@@ -315,11 +310,29 @@ void start_Calculation()
 
 int main(int argc, char* argv[])
 {
-	clock_t prgstart, prgende;
-	printf("start with %d DIMs and %d BLOCKS\n", DIMENSION, MAX_BLOCKS_PER_GRID);
+
+	printf("start with %d DIMs, %d BLOCKS with each %d THREADS and %d ITERATIONS\n", DIMENSION, MAX_BLOCKS_PER_GRID, MAX_THREADS_PER_BLOCK, MAX_ITERATIONS);
+	clock_t prgstart, prgende; 
+
+	//Quaternion C
+	float creal = C_REAL;
+	float ci = C_I;
+	float cj = C_J;
+	float ck = C_K;
+	int maxblocks = MAX_BLOCKS_PER_GRID;
+	int maxthreads = MAX_THREADS_PER_BLOCK;
+	
+	
+	
+	//start time measurement
 	prgstart=clock();
-	start_Calculation();
-	prgende=clock();//CPU-Zeit am Ende des Programmes
+
+	start_Calculation(creal, ci, cj, ck, maxblocks, maxthreads);
+
+	//stop time measurement
+	prgende=clock(); 
+
+	//print result
 	printf("Laufzeit %.2f Sekunden\n",(float)(prgende-prgstart) / CLOCKS_PER_SEC);
 	printf("stop\n");
 	return 0;
