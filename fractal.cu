@@ -109,7 +109,7 @@ class Quaternion
 
 /*conversion from 1D representation of a 3D array into a 3D array*/
 
-//get the exact float value for a given 3D index value
+//get the exact float value for a given 3D index value for -1<x,y,z<1
 __host__ __device__ float getCoordinateValue(int Index)
 {
 	return ((float)(Index*2)/(float)(DIMENSION-1))-1;
