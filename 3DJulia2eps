@@ -1,0 +1,12 @@
+#! /usr/bin/gnuplot
+#usage: gnuplot -e "inputfile='foo.dat'" 3DJulia2eps
+
+
+if (!exists("inputfilename")) inputfilename='default.dat'
+set terminal postscript enhanced
+set output inputfilename.'.eps'
+set xrange[-1:1]
+set yrange[-1:1]
+set zrange[-1:1]
+set view 45,45
+splot inputfilename title inputfilename

@@ -276,7 +276,7 @@ void start_Calculation(float creal, float ci, float cj, float ck, int maxBlocksP
 
 			//print results into .dat file
 			std::ostringstream file;
-			file << "dots" << (pos-(devices-i)) << ".dat";
+			file << "out/dots" << (pos-(devices-i)) << ".dat";
 			dotfile = fopen(file.str().c_str(), "w+");
 			for(int j=0; j<DIMENSION*DIMENSION*DIMENSION; j++)
 			{
