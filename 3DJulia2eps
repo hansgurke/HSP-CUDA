@@ -1,11 +1,11 @@
 #! /usr/bin/gnuplot
-#usage: gnuplot -e "inputfile='foo.dat'" 3DJulia2eps
+#usage: gnuplot -e "inputfile='foo.dat'; outputfilename='fooout'" 3DJulia2eps
 
 
 if (!exists("inputfilename")) inputfilename='default.dat'
 if (!exists("outputfilename")) outputfilename='default'
 set terminal postscript enhanced
-set output inputfilename.'.eps'
+set output outputfilename.'.eps'
 set xrange[-1:1]
 set yrange[-1:1]
 set zrange[-1:1]

@@ -10,7 +10,7 @@ if [ "$1" == png ];
 			gnuplot -e "inputfilename='${i}'; outputfilename='${j}'" 3DJulia2png;
 		done
 fi
-if [ "$1" == eps ]:
+if [ "$1" == eps ];
 	then 	
 		mkdir -p eps
 		for i in out/*.dat;
