@@ -278,7 +278,7 @@ void start_Calculation(float creal, float ci, float cj, float ck, int maxBlocksP
 
 			//print results into .dat file
 			std::ostringstream file;
-			file << "out/dots" << std::setfill('0') << std::setw(4) << (pos-(devices-i)) << ".dat";
+			file << "out/dots" << "_k_" << getCoordinateValue(pos) << std::setfill('0') << std::setw(4) << (pos-(devices-i)) << .dat";
 			dotfile = fopen(file.str().c_str(), "w+");
 			for(int j=0; j<DIMENSION*DIMENSION*DIMENSION; j++)
 			{
@@ -337,7 +337,7 @@ int main(int argc, char* argv[])
 	std::ostringstream file;
 	file << "out/info.txt";
 	infofile = fopen(file.str().c_str(), "w+");
-	fprintf(dotfile, "quaternion C:\treal= %f i= %f j= %f k= %f\nblocksize= %d threads per block= %d\n\nproblemdescription:\n dimension: %d x %d x %d x %d\niterations= %d\nrunningtime= %fsec\n",creal, ci, cj, ck, maxblocks, maxthreads, DIMENSION, DIMENSION, DIMENSION, DIMENSION, MAX_ITERATIONS, (float)(prgende-prgstart) / CLOCKS_PER_SEC); 
+	fprintf(infofile, "quaternion C:\treal= %f i= %f j= %f k= %f\nblocksize= %d threads per block= %d\n\nproblemdescription:\n dimension: %d x %d x %d x %d\niterations= %d\nrunningtime= %fsec\n",creal, ci, cj, ck, maxblocks, maxthreads, DIMENSION, DIMENSION, DIMENSION, DIMENSION, MAX_ITERATIONS, (float)(prgende-prgstart) / CLOCKS_PER_SEC); 
 	fclose(infofile);
 	//printf("Laufzeit %.2f Sekunden\n",(float)(prgende-prgstart) / CLOCKS_PER_SEC);
 	printf("stop\n");
