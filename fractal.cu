@@ -7,6 +7,9 @@
 #include "Constants.h"
 #include <sstream>
 #include <iomanip>
+#include <sys/types.h>
+#include <sys/stat.h>
+#define MODUS ,0711)
 
 /*
 static void CheckCudaErrorAux (const char *, unsigned, const char *, cudaError_t);
@@ -312,7 +315,6 @@ void start_Calculation(float creal, float ci, float cj, float ck, int maxBlocksP
 
 int main(int argc, char* argv[])
 {
-
 	printf("start\n");//"with %d DIMs, %d BLOCKS with each %d THREADS and %d ITERATIONS\n", DIMENSION, MAX_BLOCKS_PER_GRID, MAX_THREADS_PER_BLOCK, MAX_ITERATIONS);
 	clock_t prgstart, prgende; 
 

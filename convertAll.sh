@@ -1,5 +1,9 @@
 #!/bin/bash
 
+mkdir -p png
+
 for i in out/*.dat;
-do gnuplot -e "inputfilename='${i}'; outputfilename='${i%.dat}'" 3DJulia2png;
+do k=${i##*/}
+j="png/${k%.dat}"
+gnuplot -e "inputfilename='${i}'; outputfilename='${j}'" 3DJulia2png;
 done
