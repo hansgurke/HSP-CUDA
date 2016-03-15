@@ -9,4 +9,3 @@ fractal
 *.eps
 *.png
 info.*
-!example/*png
