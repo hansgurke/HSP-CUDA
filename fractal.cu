@@ -6,10 +6,12 @@
 #include <math.h>
 #include "Constants.h"
 #include <sstream>
+#include <iomanip>
 
+/*
 static void CheckCudaErrorAux (const char *, unsigned, const char *, cudaError_t);
 #define CUDA_CHECK_RETURN(value) CheckCudaErrorAux(__FILE__,__LINE__, #value, value)
-
+*/
 
 /*START CLASS DEFINITIONS*/
 /**/
@@ -276,7 +278,7 @@ void start_Calculation(float creal, float ci, float cj, float ck, int maxBlocksP
 
 			//print results into .dat file
 			std::ostringstream file;
-			file << "out/dots" << (pos-(devices-i)) << ".dat";
+			file << "out/dots" << std::setfill('0') << std::setw(4) << (pos-(devices-i)) << ".dat";
 			dotfile = fopen(file.str().c_str(), "w+");
 			for(int j=0; j<DIMENSION*DIMENSION*DIMENSION; j++)
 			{

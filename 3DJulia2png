@@ -3,9 +3,10 @@
 
 
 if (!exists("inputfilename")) inputfilename='default.dat'
+if (!exists("outputfilename")) outputfilename='default'
 set terminal png 
 #postscript enhanced
-set output inputfilename.'.png'
+set output outputfilename.'.png'
 set xrange[-1:1]
 set yrange[-1:1]
 set zrange[-1:1]
