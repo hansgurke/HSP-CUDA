@@ -1,0 +1,16 @@
+./fractal
+
+puts its calculated 3D frames in out/dots#NUM_k_#VALUE.dat
+along with info.txt which contains all settings
+
+
+
+./convertAll.sh png
+
+takes all frames from out/*.dat and convert it to png files using gnuplot through following script: '3DJulia2png'
+
+
+
+./convertAll.sh eps
+
+takes all frames from out/*.dat and convert it to eps files using gnuplot through following script: '3DJulia2eps'	//NOTICE eps images are upside down

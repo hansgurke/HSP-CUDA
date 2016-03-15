@@ -3,6 +3,7 @@
 
 
 if (!exists("inputfilename")) inputfilename='default.dat'
+if (!exists("outputfilename")) outputfilename='default'
 set terminal postscript enhanced
 set output inputfilename.'.eps'
 set xrange[-1:1]
