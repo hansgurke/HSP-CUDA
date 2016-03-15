@@ -313,7 +313,7 @@ void start_Calculation(float creal, float ci, float cj, float ck, int maxBlocksP
 int main(int argc, char* argv[])
 {
 
-	printf("start with %d DIMs, %d BLOCKS with each %d THREADS and %d ITERATIONS\n", DIMENSION, MAX_BLOCKS_PER_GRID, MAX_THREADS_PER_BLOCK, MAX_ITERATIONS);
+	printf("start\n");//"with %d DIMs, %d BLOCKS with each %d THREADS and %d ITERATIONS\n", DIMENSION, MAX_BLOCKS_PER_GRID, MAX_THREADS_PER_BLOCK, MAX_ITERATIONS);
 	clock_t prgstart, prgende; 
 
 	//Quaternion C
@@ -322,9 +322,7 @@ int main(int argc, char* argv[])
 	float cj = C_J;
 	float ck = C_K;
 	int maxblocks = MAX_BLOCKS_PER_GRID;
-	int maxthreads = MAX_THREADS_PER_BLOCK;
-	
-	
+	int maxthreads = MAX_THREADS_PER_BLOCK;	
 	
 	//start time measurement
 	prgstart=clock();
@@ -335,7 +333,13 @@ int main(int argc, char* argv[])
 	prgende=clock(); 
 
 	//print result
-	printf("Laufzeit %.2f Sekunden\n",(float)(prgende-prgstart) / CLOCKS_PER_SEC);
+	FILE* infofile;
+	std::ostringstream file;
+	file << "out/info.txt";
+	infofile = fopen(file.str().c_str(), "w+");
+	fprintf(dotfile, "quaternion C:\treal= %f i= %f j= %f k= %f\nblocksize= %d threads per block= %d\n\nproblemdescription:\n dimension: %d x %d x %d x %d\niterations= %d\nrunningtime= %fsec\n",creal, ci, cj, ck, maxblocks, maxthreads, DIMENSION, DIMENSION, DIMENSION, DIMENSION, MAX_ITERATIONS, (float)(prgende-prgstart) / CLOCKS_PER_SEC); 
+	fclose(infofile);
+	//printf("Laufzeit %.2f Sekunden\n",(float)(prgende-prgstart) / CLOCKS_PER_SEC);
 	printf("stop\n");
 	return 0;
 }
